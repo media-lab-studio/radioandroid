@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient"
+    android:background="#0F0F19"
     android:fillViewport="true">
 
     <LinearLayout
@@ -61,7 +61,6 @@
                 android:layout_width="320dp"
                 android:layout_height="320dp"
                 android:layout_gravity="center"
-                android:src="@drawable/glow_circle"
                 android:visibility="gone" />
 
         </FrameLayout>
@@ -84,7 +83,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="15dp"
-            android:background="@drawable/rounded_bg_status"
+            android:background="#14FFFFFF"
             android:gravity="center_vertical"
             android:minHeight="60dp"
             android:orientation="horizontal"
@@ -134,14 +133,12 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:padding="12dp"
-            android:background="@drawable/rounded_bg_status"
             android:layout_marginBottom="15dp"
             android:minHeight="60dp">
 
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_music"
                 android:layout_marginEnd="10dp"
                 app:tint="#FF5E00" />
 
@@ -204,7 +201,7 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:padding="12dp"
-            android:background="@drawable/rounded_bg_volume"
+            android:background="#0DFFFFFF"
         android:layout_marginBottom="15dp"
         android:minHeight="60dp">
 
@@ -213,7 +210,6 @@
             android:id="@+id/ivVolumeIcon"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/ic_volume_up"
             android:layout_marginEnd="12dp"
             app:tint="#FF5E00" />
 
@@ -227,7 +223,6 @@
             android:progress="70"
             android:progressTint="#FF5E00"
             android:thumbTint="#FFFFFF"
-        android:thumb="@drawable/thumb_circle"
         android:progressBackgroundTint="#444444" />
 
     </LinearLayout>
@@ -253,7 +248,7 @@
                     android:id="@+id/btnTelegram"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/btn_telegram_gradient"
+                    android:background="#0088CC"
                     android:clickable="true"
                     android:gravity="center"
                     android:orientation="horizontal"
@@ -263,8 +258,7 @@
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
-                        android:layout_marginEnd="6dp"
-                        android:src="@drawable/ic_telegram" />
+                        android:layout_marginEnd="6dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -293,7 +287,7 @@
                     android:id="@+id/btnSponsor"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/btn_sponsor_gradient"
+                    android:background="#FF5E00"
                     android:clickable="true"
                     android:gravity="center"
                     android:orientation="horizontal"
@@ -303,8 +297,7 @@
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
-                        android:layout_marginEnd="6dp"
-                        android:src="@drawable/ic_heart" />
+                        android:layout_marginEnd="6dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -353,7 +346,6 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="8dp"
-                            android:drawableLeft="@drawable/ic_broadcast"
                             android:drawablePadding="8dp"
                             android:drawableTint="#FF5E00"
                             android:text="Станция: Eternal Rock"
@@ -364,7 +356,6 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="8dp"
-                            android:drawableLeft="@drawable/ic_music"
                             android:drawablePadding="8dp"
                             android:drawableTint="#FF5E00"
                             android:text="Жанр:"
@@ -374,7 +365,6 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:drawableLeft="@drawable/ic_stream"
                             android:drawablePadding="8dp"
                             android:drawableTint="#FF5E00"
                             android:text="Поток: 128 kbps MP3"

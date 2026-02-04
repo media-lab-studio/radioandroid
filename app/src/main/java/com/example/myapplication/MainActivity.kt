@@ -3,6 +3,7 @@ package com.example.myapplication
 import android.animation.ObjectAnimator
 import android.content.Intent
 import android.graphics.Color
+import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.*
@@ -11,22 +12,31 @@ import android.util.Log
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
+import java.net.URL
+import javax.net.ssl.HttpsURLConnection
 import kotlin.math.sin
-import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
     // Конфигурация
     private companion object {
+        // Альтернативные радиостанции на случай проблем
         const val STREAM_URL = "https://myradio24.org/25968"
-        const val API_URL = "https://myradio24.com/users/25968/status.json"
+        const val ALT_STREAM_URL1 = "http://stream.radioparadise.com/rock-128"
+        const val ALT_STREAM_URL2 = "https://stream.live.vc.bbcmedia.co.uk/bbc_radio_one"
+
+        // Простые тестовые потоки
+        const val TEST_STREAM_1 = "https://icecast.rtl.it/radiofreccia" // Итальянское радио
+        const val TEST_STREAM_2 = "http://live.leanstream.co/CIOQFMAAC" // Канадское радио
+        const val TEST_STREAM_3 = "http://icecast.rtl.it/radiofreccia.aac" // AAC поток
+
         const val DEFAULT_VOLUME = 70
-        const val UPDATE_INTERVAL = 30000L // 30 секунд
+        const val UPDATE_INTERVAL = 10000L
+        const val CONNECTION_TIMEOUT = 15000 // 15 секунд таймаут
     }
 
     // UI элементы
@@ -35,7 +45,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ivStatus: ImageView
     private lateinit var tvCurrentTrack: TextView
     private lateinit var tvNextTrack: TextView
-    private lateinit var tvPlaylistName: TextView // для отображения плейлиста
     private lateinit var nextTrackContainer: LinearLayout
     private lateinit var sbVolume: SeekBar
     private lateinit var visualizer: LinearLayout
@@ -44,27 +53,48 @@ class MainActivity : AppCompatActivity() {
 
     // Состояние
     private var isPlaying = false
-    private var currentVolume = DEFAULT_VOLUME
+    private var currentVolume = DEFAULT_VOLUME // ВОССТАНАВЛИВАЕМ эту переменную
     private var rotationAnimator: ObjectAnimator? = null
     private var visualizerJob: Job? = null
     private var trackUpdateJob: Job? = null
     private var mediaPlayer: MediaPlayer? = null
 
-    // Данные треков
-    private var currentTrack = ""
-    private var nextTrack = ""
-    private var currentPlaylist = ""
+    // Coroutine scope для управления жизненным циклом
+    private val mainScope = MainScope()
+
+    // Тестовые данные треков
+    private val testTracks = listOf(
+        "Metallica - Enter Sandman",
+        "AC/DC - Back in Black",
+        "Nirvana - Smells Like Teen Spirit",
+        "Led Zeppelin - Stairway to Heaven",
+        "Queen - Bohemian Rhapsody"
+    )
+
+    private val testNextTracks = listOf(
+        "Deep Purple - Smoke on the Water",
+        "Iron Maiden - The Trooper",
+        "Ozzy Osbourne - Crazy Train",
+        "Aerosmith - Dream On",
+        "Scorpions - Wind of Change"
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        Log.d("MainActivity", "Приложение запущено")
+
         initViews()
         setupClickListeners()
         setupVolumeControl()
 
-        // Загружаем начальные данные
-        loadInitialData()
+        // Устанавливаем начальный текст
+        tvCurrentTrack.text = "EternalRock Radio"
+        tvNextTrack.text = "Нажмите на пластинку"
+
+        // Проверяем разрешение на интернет в манифесте
+        checkInternetPermission()
     }
 
     private fun initViews() {
@@ -78,8 +108,12 @@ class MainActivity : AppCompatActivity() {
         visualizer = findViewById(R.id.visualizer)
         btnTelegram = findViewById(R.id.btnTelegram)
         btnSponsor = findViewById(R.id.btnSponsor)
-        tvPlaylistName = findViewById(R.id.tvPlaylistName)
+    }
 
+    private fun checkInternetPermission() {
+        // Убедитесь, что в AndroidManifest.xml есть:
+        // <uses-permission android:name="android.permission.INTERNET" />
+        Log.d("MainActivity", "Проверка разрешений: INTERNET должно быть в манифесте")
     }
 
     private fun setupClickListeners() {
@@ -96,22 +130,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadInitialData() {
-        // Загружаем начальные данные о треке и плейлисте
-        CoroutineScope(IO).launch {
-            fetchTrackInfo()
-        }
-    }
-
     private fun togglePlayback() {
         if (isPlaying) {
             stopPlayback()
         } else {
-            startPlayback()
+            // Даем пользователю выбор: онлайн радио или локальный файл
+            showPlaybackOptions()
         }
     }
 
-    private fun startPlayback() {
+    private fun showPlaybackOptions() {
+        val options = arrayOf("Онлайн радио", "Локальный файл (тест)", "Отмена")
+
+        AlertDialog.Builder(this)
+            .setTitle("Выберите источник аудио")
+            .setItems(options) { dialog, which ->
+                when (which) {
+                    0 -> startOnlinePlayback() // Онлайн радио
+                    1 -> startLocalPlayback()  // Локальный файл
+                    // 2 - отмена, ничего не делаем
+                }
+            }
+            .setCancelable(true)
+            .show()
+    }
+
+    private fun startOnlinePlayback() {
+        Log.d("RadioPlayer", "Запуск онлайн воспроизведения")
         isPlaying = true
 
         // Анимация вращения пластинки
@@ -126,14 +171,168 @@ class MainActivity : AppCompatActivity() {
         // Запуск визуализатора
         startVisualizer()
 
-        // Запуск аудиопотока
-        startAudioStream()
+        // Обновляем текст
+        tvCurrentTrack.text = "Подключение к радио..."
+        tvNextTrack.text = "Идет подключение..."
 
-        // Запуск обновления информации о треках
-        startTrackUpdates()
+        // Запуск аудиопотока в отдельной корутине
+        mainScope.launch {
+            startAudioStreamWithRetry()
+        }
+
+        // Запуск тестовых обновлений треков
+        startTestTrackUpdates()
+    }
+
+    private fun startLocalPlayback() {
+        Log.d("RadioPlayer", "Запуск локального воспроизведения")
+        isPlaying = true
+
+        // Анимация вращения пластинки
+        startRecordRotation()
+
+        // Изменение иконки статуса
+        ivStatus.setImageResource(R.drawable.ic_pause)
+
+        // Показ следующего трека
+        nextTrackContainer.visibility = View.VISIBLE
+
+        // Запуск визуализатора
+        startVisualizer()
+
+        // Обновляем текст
+        tvCurrentTrack.text = "Подготовка локального файла..."
+        tvNextTrack.text = "Тестовый трек"
+
+        // Запуск локального аудиофайла
+        testLocalAudio()
+
+        // Запуск тестовых обновлений треков
+        startTestTrackUpdates()
+    }
+
+    private suspend fun startAudioStreamWithRetry() {
+        val urlsToTry = listOf(
+            STREAM_URL,
+            ALT_STREAM_URL1,
+            ALT_STREAM_URL2,
+            TEST_STREAM_1,
+            TEST_STREAM_2,
+            TEST_STREAM_3
+        )
+
+        for ((index, url) in urlsToTry.withIndex()) {
+            Log.d("RadioPlayer", "Попытка подключения к потоку $index: $url")
+
+            runOnUiThread {
+                tvCurrentTrack.text = "Подключение... Попытка ${index + 1}/6"
+            }
+
+            try {
+                // Пытаемся подключиться напрямую
+                startAudioStream(url)
+                return // Успешно подключились, выходим
+            } catch (e: Exception) {
+                Log.e("RadioPlayer", "Ошибка при попытке $index: ${e.message}")
+                if (index == urlsToTry.lastIndex) {
+                    // Последняя попытка не удалась
+                    runOnUiThread {
+                        showConnectionError()
+                    }
+                }
+                delay(1000) // Задержка перед следующей попыткой
+            }
+        }
+    }
+
+    private fun startAudioStream(url: String) {
+        runOnUiThread {
+            try {
+                Log.d("RadioPlayer", "Создание MediaPlayer для URL: $url")
+
+                // Освобождаем предыдущий MediaPlayer
+                mediaPlayer?.release()
+
+                mediaPlayer = MediaPlayer().apply {
+                    // Настройка аудио атрибутов
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build()
+                    )
+
+                    // Устанавливаем источник данных
+                    setDataSource(url)
+
+                    // Обработчик ошибок
+                    setOnErrorListener { mp, what, extra ->
+                        Log.e("RadioPlayer", "Ошибка MediaPlayer: what=$what, extra=$extra")
+
+                        runOnUiThread {
+                            tvCurrentTrack.text = "Ошибка подключения"
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Не удалось подключиться к радио",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            stopPlayback()
+                        }
+
+                        // Возвращаем true, чтобы указать что ошибка обработана
+                        true
+                    }
+
+                    // Обработчик подготовки
+                    setOnPreparedListener { mp ->
+                        Log.d("RadioPlayer", "Аудио подготовлено, запускаем воспроизведение...")
+                        mp.start()
+                        mp.setVolume(currentVolume / 100f, currentVolume / 100f)
+                        runOnUiThread {
+                            tvCurrentTrack.text = "Радио запущено!"
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Подключено к радио",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    // Готовим асинхронно
+                    prepareAsync()
+                    Log.d("RadioPlayer", "Подготовка MediaPlayer запущена")
+                }
+            } catch (e: Exception) {
+                Log.e("RadioPlayer", "Критическая ошибка при создании MediaPlayer", e)
+                runOnUiThread {
+                    tvCurrentTrack.text = "Ошибка: ${e.localizedMessage}"
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Не удалось создать плеер: ${e.localizedMessage}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    stopPlayback()
+                }
+                // Пробрасываем исключение дальше для retry
+                throw e
+            }
+        }
+    }
+
+    private fun showConnectionError() {
+        runOnUiThread {
+            tvCurrentTrack.text = "Не удалось подключиться к радио"
+            Toast.makeText(
+                this@MainActivity,
+                "Проверьте подключение к интернету и попробуйте снова",
+                Toast.LENGTH_LONG
+            ).show()
+            stopPlayback()
+        }
     }
 
     private fun stopPlayback() {
+        Log.d("RadioPlayer", "Остановка воспроизведения")
         isPlaying = false
 
         // Остановка анимации вращения
@@ -149,50 +348,62 @@ class MainActivity : AppCompatActivity() {
         stopVisualizer()
 
         // Обновление текста статуса
-        updateStatusText()
+        tvCurrentTrack.text = "Радио выключено. Нажмите на пластинку"
 
         // Остановка аудио
         stopAudioStream()
 
-        // Остановка обновления
+        // Остановка обновления треков
         stopTrackUpdates()
-    }
-
-    private fun startAudioStream() {
-        try {
-            mediaPlayer = MediaPlayer().apply {
-                setDataSource(STREAM_URL)
-                prepareAsync()
-                setOnPreparedListener {
-                    start()
-                    setVolume(currentVolume / 100f, currentVolume / 100f)
-                    Log.d("RadioPlayer", "Аудио поток запущен")
-                }
-                setOnErrorListener { _, what, extra ->
-                    Log.e("RadioPlayer", "Ошибка аудио: what=$what, extra=$extra")
-                    runOnUiThread {
-                        Toast.makeText(this@MainActivity, "Ошибка подключения к радио", Toast.LENGTH_SHORT).show()
-                        stopPlayback()
-                    }
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("RadioPlayer", "Ошибка запуска аудио: ${e.message}")
-            Toast.makeText(this, "Ошибка загрузки потока", Toast.LENGTH_SHORT).show()
-            stopPlayback()
-        }
     }
 
     private fun stopAudioStream() {
         mediaPlayer?.let { player ->
-            if (player.isPlaying) {
-                player.stop()
+            try {
+                if (player.isPlaying) {
+                    player.stop()
+                }
+                player.release()
+                Log.d("RadioPlayer", "MediaPlayer остановлен и освобожден")
+            } catch (e: Exception) {
+                Log.e("RadioPlayer", "Ошибка при остановке MediaPlayer", e)
             }
-            player.release()
         }
         mediaPlayer = null
-        Log.d("RadioPlayer", "Аудио поток остановлен")
+    }
+
+    private fun startTestTrackUpdates() {
+        trackUpdateJob?.cancel()
+
+        trackUpdateJob = mainScope.launch {
+            var trackIndex = 0
+
+            while (isActive && isPlaying) {
+                // Обновляем текущий трек
+                val currentTrack = testTracks[trackIndex % testTracks.size]
+                val nextTrack = testNextTracks[trackIndex % testNextTracks.size]
+
+                runOnUiThread {
+                    tvCurrentTrack.text = currentTrack
+                    tvNextTrack.text = "Далее: $nextTrack"
+
+                    // Анимация обновления
+                    tvCurrentTrack.alpha = 0f
+                    tvCurrentTrack.animate()
+                        .alpha(1f)
+                        .setDuration(500)
+                        .start()
+                }
+
+                trackIndex++
+                delay(UPDATE_INTERVAL)
+            }
+        }
+    }
+
+    private fun stopTrackUpdates() {
+        trackUpdateJob?.cancel()
+        trackUpdateJob = null
     }
 
     private fun startRecordRotation() {
@@ -215,164 +426,15 @@ class MainActivity : AppCompatActivity() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 currentVolume = progress
                 mediaPlayer?.setVolume(progress / 100f, progress / 100f)
-                updateVolumeIcon(progress)
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
     }
 
-    private fun updateVolumeIcon(volume: Int) {
-        // Можно добавить логику изменения иконки в зависимости от громкости
-        // Например, разные иконки для mute/low/medium/high volume
-    }
-
-    private fun startTrackUpdates() {
-        trackUpdateJob?.cancel()
-
-        trackUpdateJob = CoroutineScope(Main).launch {
-            while (isActive && isPlaying) {
-                fetchTrackInfo()
-                delay(UPDATE_INTERVAL)
-            }
-        }
-    }
-
-    private fun stopTrackUpdates() {
-        trackUpdateJob?.cancel()
-        trackUpdateJob = null
-    }
-
-    private suspend fun fetchTrackInfo() {
-        withContext(IO) {
-            try {
-                val url = java.net.URL(API_URL)
-                val connection = url.openConnection() as java.net.HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 10000
-                connection.readTimeout = 10000
-
-                val responseCode = connection.responseCode
-                if (responseCode == 200) {
-                    val inputStream = connection.inputStream
-                    val response = inputStream.bufferedReader().use { it.readText() }
-
-                    val json = JSONObject(response)
-
-                    // Получаем текущий трек
-                    val song = json.optString("song", "")
-                    val artist = json.optString("artist", "")
-
-                    val currentTrackText = if (artist.isNotEmpty() && song.isNotEmpty()) {
-                        "$artist - $song"
-                    } else if (song.isNotEmpty()) {
-                        song
-                    } else {
-                        "Информация о треке недоступна"
-                    }
-
-                    // Получаем следующий трек
-                    val nextTrackText = if (json.has("nextsongs")) {
-                        val nextSongs = json.getJSONArray("nextsongs")
-                        if (nextSongs.length() > 0) {
-                            val nextSong = nextSongs.getJSONObject(0)
-                            val nextArtist = nextSong.optString("artist", "")
-                            val nextSongTitle = nextSong.optString("song", "")
-
-                            if (nextArtist.isNotEmpty() && nextSongTitle.isNotEmpty()) {
-                                "$nextArtist - $nextSongTitle"
-                            } else if (nextSongTitle.isNotEmpty()) {
-                                nextSongTitle
-                            } else {
-                                ""
-                            }
-                        } else {
-                            ""
-                        }
-                    } else {
-                        ""
-                    }
-
-                    // Получаем название плейлиста
-                    val playlist = json.optString("playlist", "")
-                    val playlistName = if (playlist.isNotEmpty()) {
-                        playlist.replace("_", " ").replace("\\s*\\d+\$".toRegex(), "").trim()
-                    } else {
-                        "Rock / Metal / Alternative"
-                    }
-
-                    // Обновляем UI в главном потоке
-                    withContext(Main) {
-                        updateTrackInfo(currentTrackText, nextTrackText, playlistName)
-                    }
-
-                    Log.d("TrackInfo", "Текущий трек: $currentTrackText")
-                    Log.d("TrackInfo", "Следующий трек: $nextTrackText")
-                    Log.d("TrackInfo", "Плейлист: $playlistName")
-
-                } else {
-                    Log.e("TrackInfo", "Ошибка HTTP: $responseCode")
-                    withContext(Main) {
-                        updateStatusText()
-                    }
-                }
-
-                connection.disconnect()
-
-            } catch (e: Exception) {
-                Log.e("TrackInfo", "Ошибка получения данных: ${e.message}")
-                withContext(Main) {
-                    updateStatusText()
-                }
-            }
-        }
-    }
-
-    private fun updateTrackInfo(current: String, next: String, playlist: String) {
-        // Сохраняем данные
-        currentTrack = current
-        nextTrack = next
-        currentPlaylist = playlist
-
-        // Обновляем текущий трек
-        tvCurrentTrack.text = current
-
-        // Обновляем следующий трек
-        if (next.isNotEmpty()) {
-            tvNextTrack.text = next
-            if (isPlaying) {
-                nextTrackContainer.visibility = View.VISIBLE
-            }
-        } else {
-            nextTrackContainer.visibility = View.GONE
-        }
-
-        // Обновляем плейлист (если есть TextView для него)
-        // tvPlaylistName?.text = playlist
-
-        // Анимация обновления
-        tvCurrentTrack.alpha = 0f
-        tvCurrentTrack.animate()
-            .alpha(1f)
-            .setDuration(500)
-            .start()
-    }
-
-    private fun updateStatusText() {
-        if (isPlaying) {
-            if (currentTrack.isNotEmpty()) {
-                tvCurrentTrack.text = currentTrack
-            } else {
-                tvCurrentTrack.text = "Загрузка информации о треке..."
-            }
-        } else {
-            tvCurrentTrack.text = "Радио выключено. Нажмите на пластинку"
-            nextTrackContainer.visibility = View.GONE
-        }
-    }
-
     private fun startVisualizer() {
-        visualizerJob = CoroutineScope(Main).launch {
+        visualizerJob?.cancel()
+        visualizerJob = mainScope.launch {
             val bars = mutableListOf<View>()
             for (i in 0 until visualizer.childCount) {
                 bars.add(visualizer.getChildAt(i) as View)
@@ -380,18 +442,13 @@ class MainActivity : AppCompatActivity() {
 
             while (isActive && isPlaying) {
                 bars.forEachIndexed { index, view ->
-                    // Синусоидальная анимация для эффекта визуализатора
-                    val amplitude = 50.0
-                    val frequency = 0.1
-                    val phase = index * 0.2
                     val time = System.currentTimeMillis() * 0.001
-
-                    val height = (amplitude * sin(2 * Math.PI * frequency * time + phase)).toFloat() + 20
+                    val height = (sin(time * 2 + index * 0.3) * 25 + 35).toFloat()
 
                     view.layoutParams.height = height.toInt()
                     view.requestLayout()
 
-                    val alphaFloat = (height / 100).coerceIn(0.3f, 1f)
+                    val alphaFloat = (height / 100).coerceIn(0.3f, 0.8f)
                     val alphaInt = (alphaFloat * 255).toInt()
                     view.setBackgroundColor(Color.argb(alphaInt, 255, 94, 0))
                 }
@@ -402,11 +459,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopVisualizer() {
         visualizerJob?.cancel()
-        // Сброс высоты всех баров
-        for (i in 0 until visualizer.childCount) {
-            val view = visualizer.getChildAt(i)
-            view.layoutParams.height = 20
-            view.setBackgroundColor(Color.parseColor("#FF5E00"))
+        visualizerJob = null
+
+        // Сброс визуализатора
+        runOnUiThread {
+            for (i in 0 until visualizer.childCount) {
+                val view = visualizer.getChildAt(i)
+                view.layoutParams.height = 20
+                view.setBackgroundColor(Color.parseColor("#FF5E00"))
+                view.requestLayout()
+            }
         }
     }
 
@@ -423,29 +485,91 @@ class MainActivity : AppCompatActivity() {
         openTelegram()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stopAudioStream()
-        visualizerJob?.cancel()
-        trackUpdateJob?.cancel()
-        rotationAnimator?.cancel()
-    }
-
     override fun onPause() {
         super.onPause()
-        // Можно добавить паузу при сворачивании приложения
-        // if (isPlaying) {
-        //     // Останавливаем воспроизведение при сворачивании
-        //     stopPlayback()
-        // }
+        // Останавливаем воспроизведение при сворачивании приложения
+        if (isPlaying) {
+            stopPlayback()
+        }
     }
 
-    override fun onResume() {
-        super.onResume()
-        // При возвращении в приложение обновляем данные
-        if (!isPlaying) {
-            CoroutineScope(IO).launch {
-                fetchTrackInfo()
+    override fun onDestroy() {
+        super.onDestroy()
+        mainScope.cancel() // Отменяем все корутины
+        stopAudioStream()
+        rotationAnimator?.cancel()
+        Log.d("MainActivity", "Приложение закрыто")
+    }
+
+    private fun testLocalAudio() {
+        runOnUiThread {
+            try {
+                Log.d("RadioPlayer", "Тестирование локального аудио файла")
+
+                // Освобождаем предыдущий MediaPlayer
+                mediaPlayer?.release()
+
+                mediaPlayer = MediaPlayer().apply {
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build()
+                    )
+
+                    // Загружаем файл из папки assets
+                    val assetManager = this@MainActivity.assets
+                    val assetFileDescriptor = assetManager.openFd("test.mp3")
+
+                    setDataSource(
+                        assetFileDescriptor.fileDescriptor,
+                        assetFileDescriptor.startOffset,
+                        assetFileDescriptor.length
+                    )
+
+                    assetFileDescriptor.close()
+
+                    setOnPreparedListener { mp ->
+                        Log.d("RadioPlayer", "Локальный файл подготовлен, запуск...")
+                        mp.start()
+                        mp.setVolume(currentVolume / 100f, currentVolume / 100f)
+                        runOnUiThread {
+                            tvCurrentTrack.text = "Тестовое аудио запущено!"
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Воспроизводится локальный MP3 файл",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    setOnErrorListener { mp, what, extra ->
+                        Log.e("RadioPlayer", "Ошибка воспроизведения локального файла: $what, $extra")
+                        runOnUiThread {
+                            tvCurrentTrack.text = "Ошибка: $what, $extra"
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Не удалось воспроизвести тестовый файл",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            stopPlayback()
+                        }
+                        true
+                    }
+
+                    prepareAsync()
+                }
+            } catch (e: Exception) {
+                Log.e("RadioPlayer", "Ошибка загрузки локального файла", e)
+                runOnUiThread {
+                    tvCurrentTrack.text = "Ошибка: ${e.localizedMessage}"
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Ошибка: ${e.localizedMessage}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    stopPlayback()
+                }
             }
         }
     }
