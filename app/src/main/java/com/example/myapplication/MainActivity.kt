@@ -250,8 +250,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun startMarqueeAnimation() {
+        tvCurrentTrack.isSelected = true  // Включает бегущую строку
+    }
+
     private fun updateUI(status: RadioStatus) {
         runOnUiThread {
+            tvCurrentTrack.text = status.currentTrack
+            tvCurrentTrack.isSelected = true
             tvCurrentTrack.text = status.currentTrack
             tvNextTrack.text = status.nextTrack
             tvPlaylist.text = status.playlist
