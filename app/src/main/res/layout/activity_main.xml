@@ -18,7 +18,7 @@
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="5dp"
             android:fontFamily="sans-serif-black"
             android:gravity="center"
             android:text="EternalRock"
@@ -30,29 +30,42 @@
             android:id="@+id/tvSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="30dp"
+            android:layout_marginBottom="10dp"
             android:gravity="center"
             android:text="Нажмите на пластинку, чтобы включить радио"
             android:textColor="#A0A0FF"
             android:textSize="14sp" />
 
-        <!-- Пластинка -->
+        <!-- Пластинка с черепом по центру -->
         <FrameLayout
             android:id="@+id/recordContainer"
-            android:layout_width="300dp"
-            android:layout_height="300dp"
-            android:layout_margin="30dp"
+            android:layout_width="250dp"
+            android:layout_height="250dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="15dp"
             android:gravity="center">
 
+            <!-- Пластинка -->
             <ImageView
                 android:id="@+id/recordButton"
-                android:layout_width="280dp"
-                android:layout_height="280dp"
-                android:src="@drawable/record"
-                android:scaleType="centerCrop"
+                android:layout_width="250dp"
+                android:layout_height="250dp"
+                android:layout_gravity="center"
                 android:clickable="true"
+                android:elevation="8dp"
                 android:focusable="true"
-                android:elevation="8dp" />
+                android:scaleType="centerCrop"
+                android:src="@drawable/record" />
+
+            <!-- Череп по центру пластинки -->
+            <ImageView
+                android:id="@+id/ivSkull"
+                android:layout_width="125dp"
+                android:layout_height="125dp"
+                android:layout_gravity="center"
+                android:elevation="9dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/skull_icon" />
 
         </FrameLayout>
 
@@ -60,8 +73,8 @@
         <LinearLayout
             android:id="@+id/visualizer"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginBottom="20dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="10dp"
             android:gravity="center"
             android:orientation="horizontal" />
 
@@ -69,7 +82,7 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="15dp"
+            android:layout_marginBottom="10dp"
             app:cardBackgroundColor="#14FFFFFF"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp">
@@ -78,15 +91,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
-                android:minHeight="60dp"
+                android:minHeight="55dp"
                 android:orientation="horizontal"
-                android:padding="12dp">
+                android:padding="10dp">
 
                 <ImageView
                     android:id="@+id/ivStatus"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="10dp"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="8dp"
                     android:src="@drawable/ic_play" />
 
                 <TextView
@@ -94,13 +107,13 @@
                     android:layout_height="wrap_content"
                     android:text="Сейчас в эфире:"
                     android:textColor="#FF9D5C"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <HorizontalScrollView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:scrollbars="none">
 
@@ -111,7 +124,7 @@
                         android:singleLine="true"
                         android:text="Загрузка..."
                         android:textColor="#FFFFFF"
-                        android:textSize="16sp"
+                        android:textSize="15sp"
                         android:textStyle="bold" />
 
                 </HorizontalScrollView>
@@ -124,7 +137,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="6dp"
             android:orientation="vertical">
 
             <TextView
@@ -132,23 +145,24 @@
                 android:layout_height="wrap_content"
                 android:text="Далее в эфире:"
                 android:textColor="#FF9D5C"
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
                 android:scrollbars="none">
 
                 <TextView
                     android:id="@+id/tvNextTrack"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:paddingVertical="2dp"
                     android:singleLine="true"
                     android:text="Загрузка..."
                     android:textColor="#FFFFFF"
-                    android:textSize="16sp" />
+                    android:textSize="15sp" />
 
             </HorizontalScrollView>
 
@@ -158,7 +172,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="15dp"
             android:orientation="vertical">
 
             <TextView
@@ -166,23 +180,24 @@
                 android:layout_height="wrap_content"
                 android:text="Плейлист:"
                 android:textColor="#FF9D5C"
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
                 android:scrollbars="none">
 
                 <TextView
                     android:id="@+id/tvPlaylist"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:paddingVertical="2dp"
                     android:singleLine="true"
                     android:text="Загрузка..."
                     android:textColor="#FFFFFF"
-                    android:textSize="16sp" />
+                    android:textSize="15sp" />
 
             </HorizontalScrollView>
 
@@ -192,7 +207,7 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="15dp"
             app:cardBackgroundColor="#0DFFFFFF"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp">
@@ -200,18 +215,18 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:padding="12dp"
-                android:minHeight="60dp">
+                android:minHeight="55dp"
+                android:orientation="horizontal"
+                android:padding="10dp">
 
                 <ImageView
                     android:id="@+id/ivVolumeIcon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="12dp"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="10dp"
                     android:src="@drawable/ic_volume"
-                    app:tint="#FF5E00"/>
+                    app:tint="#FF5E00" />
 
                 <SeekBar
                     android:id="@+id/sbVolume"
@@ -220,9 +235,9 @@
                     android:layout_weight="1"
                     android:max="100"
                     android:progress="70"
+                    android:progressBackgroundTint="#444444"
                     android:progressTint="#FF5E00"
-                    android:thumbTint="#FFFFFF"
-                    android:progressBackgroundTint="#444444" />
+                    android:thumbTint="#FFFFFF" />
 
             </LinearLayout>
 
@@ -232,18 +247,17 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="25dp"
+            android:layout_marginBottom="20dp"
             android:gravity="center"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
             <!-- Кнопка Telegram -->
             <androidx.cardview.widget.CardView
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                app:cardCornerRadius="30dp"
-                app:cardElevation="4dp">
+                android:layout_marginBottom="10dp"
+                app:cardCornerRadius="25dp"
+                app:cardElevation="3dp">
 
                 <LinearLayout
                     android:id="@+id/btnTelegram"
@@ -253,14 +267,14 @@
                     android:clickable="true"
                     android:gravity="center"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="12dp">
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="10dp">
 
                     <!-- Иконка Telegram -->
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="6dp"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginEnd="5dp"
                         android:src="@drawable/ic_telegram_plane" />
 
                     <TextView
@@ -270,7 +284,7 @@
                         android:maxLines="1"
                         android:text="Telegram"
                         android:textColor="#FFFFFF"
-                        android:textSize="14sp"
+                        android:textSize="13sp"
                         android:textStyle="bold" />
 
                 </LinearLayout>
@@ -279,12 +293,10 @@
 
             <!-- Кнопка Спонсировать -->
             <androidx.cardview.widget.CardView
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                app:cardCornerRadius="30dp"
-                app:cardElevation="4dp">
+                app:cardCornerRadius="25dp"
+                app:cardElevation="3dp">
 
                 <LinearLayout
                     android:id="@+id/btnSponsor"
@@ -294,14 +306,14 @@
                     android:clickable="true"
                     android:gravity="center"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="12dp">
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="10dp">
 
                     <!-- Иконка спонсора -->
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="6dp"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginEnd="5dp"
                         android:src="@drawable/ic_heart" />
 
                     <TextView
@@ -311,7 +323,7 @@
                         android:maxLines="1"
                         android:text="Спонсировать"
                         android:textColor="#FFFFFF"
-                        android:textSize="13sp"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                 </LinearLayout>
@@ -320,34 +332,25 @@
 
         </LinearLayout>
 
-        <!-- Пустая карточка (оставлена для структуры) -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="25dp"
-            app:cardBackgroundColor="#0DFFFFFF"
-            app:cardCornerRadius="15dp"
-            app:cardElevation="2dp">
-
-        </androidx.cardview.widget.CardView>
-
         <!-- Футер -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingTop="20dp"
-            android:paddingBottom="40dp">
+            android:paddingTop="15dp"
+            android:paddingBottom="30dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="5dp"
+                android:layout_marginBottom="3dp"
                 android:alpha="0.8"
+                android:gravity="center"
+                android:maxLines="2"
                 android:text="EternalRock © 2025 - 2026 | Прямая трансляция 24/7"
                 android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -355,7 +358,7 @@
                 android:alpha="0.8"
                 android:text="Некоммерческий проект"
                 android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
 
         </LinearLayout>
 
