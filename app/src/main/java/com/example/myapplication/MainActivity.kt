@@ -17,6 +17,7 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.sin
+import android.text.Html
 
 class MainActivity : AppCompatActivity() {
 
@@ -57,6 +58,10 @@ class MainActivity : AppCompatActivity() {
         tvCurrentTrack.text = "EternalRock Radio"
         tvNextTrack.text = "Нажмите на пластинку"
         tvPlaylist.text = "Ожидание данных..."
+    }
+
+    private fun decodeHtml(text: String): String {
+        return Html.fromHtml(text, Html.FROM_HTML_MODE_LEGACY).toString()
     }
 
     private fun initViews() {
@@ -194,14 +199,14 @@ class MainActivity : AppCompatActivity() {
         return try {
             val json = JSONObject(jsonString)
 
-            val artist = json.optString("artist", "")
-            val song = json.optString("song", "")
+            val artist = decodeHtml(json.optString("artist", ""))
+            val song = decodeHtml(json.optString("song", ""))
 
             val currentTrack =
                 if (artist.isNotEmpty() && song.isNotEmpty())
                     "$artist - $song"
                 else
-                    json.optString("title", "Неизвестный трек")
+                    decodeHtml(json.optString("title", "Неизвестный трек"))
 
             val nextArray = json.optJSONArray("nextsongs")
 
@@ -212,7 +217,7 @@ class MainActivity : AppCompatActivity() {
                     "Нет данных"
 
             val playlist = formatPlaylistName(
-                json.optString("playlist", "Неизвестный плейлист")
+                decodeHtml(json.optString("playlist", "Неизвестный плейлист"))
             )
 
             val kbps = json.optInt("kbps", 128)
@@ -240,8 +245,9 @@ class MainActivity : AppCompatActivity() {
             tvNextTrack.text = status.nextTrack
             tvPlaylist.text = status.playlist
 
-            tvCurrentTrack.alpha = 0f
-            tvCurrentTrack.animate().alpha(1f).setDuration(400).start()
+            tvCurrentTrack.animate().cancel()
+            tvCurrentTrack.alpha = 1f
+
         }
     }
 

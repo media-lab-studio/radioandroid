@@ -60,8 +60,8 @@
             <!-- Череп по центру пластинки -->
             <ImageView
                 android:id="@+id/ivSkull"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
                 android:layout_gravity="center"
                 android:elevation="9dp"
                 android:scaleType="centerInside"
@@ -110,12 +110,6 @@
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
-                <HorizontalScrollView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:scrollbars="none">
 
                     <TextView
                         android:id="@+id/tvCurrentTrack"
@@ -131,8 +125,6 @@
                         android:textColor="#FFFFFF"
                         android:textSize="15sp"
                         android:textStyle="bold" />
-
-                </HorizontalScrollView>
 
             </LinearLayout>
 
