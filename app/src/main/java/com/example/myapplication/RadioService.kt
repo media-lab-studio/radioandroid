@@ -6,6 +6,7 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.IBinder
+import androidx.annotation.RequiresApi
 
 class RadioService : Service() {
 
@@ -89,6 +90,7 @@ class RadioService : Service() {
         super.onDestroy()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun buildNotification(): Notification {
 
         val intent = Intent(this, MainActivity::class.java)
@@ -100,7 +102,7 @@ class RadioService : Service() {
         return Notification.Builder(this, CHANNEL_ID)
             .setContentTitle("EternalRock Radio")
             .setContentText("Воспроизведение")
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.mipmap.ic_launcher_round)
             .setContentIntent(pendingIntent)
             .build()
     }
