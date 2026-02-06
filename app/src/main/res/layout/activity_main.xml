@@ -58,14 +58,14 @@
                 android:src="@drawable/record" />
 
             <!-- Череп по центру пластинки -->
-            <ImageView
-                android:id="@+id/ivSkull"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_gravity="center"
-                android:elevation="9dp"
-                android:scaleType="centerInside"
-                android:src="@drawable/skull_icon" />
+<!--            <ImageView-->
+<!--                android:id="@+id/ivSkull"-->
+<!--                android:layout_width="100dp"-->
+<!--                android:layout_height="100dp"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:elevation="9dp"-->
+<!--                android:scaleType="centerInside"-->
+<!--                android:src="@drawable/skull_icon" />-->
 
         </FrameLayout>
 
